@@ -44,9 +44,12 @@ scheduleLinks <- scheduleLinks[scoreIndex]
 # Create final url
 scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
 
+#Add results to list
+scoreList <- list()
+
 # Navigate to each game
-#for(i in c(1:length(scheduleLinks))){
-i <- 1
+for(i in c(1:length(scheduleLinks))){
+#i <- 1
   remDr$navigate(scheduleLinks[i])
   
   Sys.sleep(1.5)
@@ -97,8 +100,9 @@ i <- 1
   data$pts <- as.numeric(data$pts)
   
   # Helper function to calculate which player to play.
-  bestPos <- function(data, pos){
-    player <- filter(tempData, position == pos)
+  bestPos <- function(df = data, pos){
+    player <- filter(df, position == pos)
+    player <- na.omit(player)
     player <- player[which(player$pts == max(player$pts)),]
     return(player)
   }
@@ -132,13 +136,34 @@ i <- 1
     
     #FLEX
     FLEX <- filter(tempData, position %in% c("WR", "TE", "RB"))
+    FLEX <- na.omit(FLEX)
     FLEX <- FLEX[which(FLEX$pts == max(FLEX$pts)),]
     tempData <- filter(tempData, player != FLEX$player)
     
     #DEF/ST
-    DEF <- bestPos(tempData, "ST")
+    DEF <- bestPos(tempData, "D/ST")
+    tempData <- filter(tempData, player != DEF$player)
     
-  
+    #K
+    K <- bestPos(tempData, "K")
+    tempData <- filter(tempData, player != K$player)
+    
+    # Combine into optimized roster
+    optimalData <- rbind(QB, RB1, RB2, WR1, WR2, FLEX, DEF, K)
+    
+    return(optimalData)
   }
-#}
 
+  optimizedData <- optimizeRoster(data)
+  print(optimizedData)
+  
+  week <- paste0("week", i)
+  scoreList[[week]] <- optimizedData
+  
+}
+  
+  
+  
+  
+  
+  
