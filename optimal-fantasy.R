@@ -95,28 +95,59 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
     Sys.sleep(2.0)
     
     # Find the link to show the bench players and click on it
-    showBench <- remDr$findElement(using = "xpath", value = '//*[@id="content"]/div/div[4]/div/div/div/div[5]/div[3]/a')
+    showBench <- remDr$findElement(using = "link text", "Show Bench")
     showBench$clickElement()
+    
+
     
     Sys.sleep(2.0)
     
     source <- remDr$getPageSource()[[1]]
     
-    ### Create table showing roster of players played
-    playingRoster <- read_html(source) %>%
-      html_node(xpath = '//*[@id="playertable_0"]') %>%
-      html_table(fill = TRUE)
+    ### The person's player table can either appear on the right or the left,
+    ### so a test is needed to determine which table to extract so that
+    ### the correct player data is extracted.
+    
+    #Team name whose data we want to extract
+    team <- teamMapping$teamName[which(teamMapping$teamID == id)]
+    
+    #The name of the team as displayed in the LEFT table header
+    teamTable <- read_html(source) %>%
+      html_node(xpath = '//*[@id="playertable_0"]/tbody/tr[1]/td') %>% html_text()
+    
+    #Test if team name is in the table name
+    nameTest <- grepl(pattern = team, teamTable)
+    
+    #If it is true, extract the LEFT table, if false, extract the RIGHT table.
+    if(nameTest == TRUE){
+      ### Create table showing roster of players played
+      playingRoster <- read_html(source) %>%
+        html_node(xpath = '//*[@id="playertable_0"]') %>%
+        html_table(fill = TRUE)
+      
+      # Create table of players that are benched
+      benchRoster <- read_html(source) %>%
+        html_node(xpath = '//*[@id="playertable_1"]') %>%
+        html_table(fill = TRUE)
+      
+    }else{
+      playingRoster <- read_html(source) %>%
+        html_node(xpath = '//*[@id="playertable_2"]') %>%
+        html_table(fill = TRUE)
+      
+      # Create table of players that are benched
+      benchRoster <- read_html(source) %>%
+        html_node(xpath = '//*[@id="playertable_3"]') %>%
+        html_table(fill = TRUE)
+      
+    }
     
     #Only keep the first few columns and rename them
     playingRoster <- playingRoster[-c(1:3),c(1:5)]
     colnames(playingRoster) <- c("position", "player", "opponent", "status", "pts")
     
-    # Create table of players that are benched
-    ### Create table showing roster of players played
-    benchRoster <- read_html(source) %>%
-      html_node(xpath = '//*[@id="playertable_1"]') %>%
-      html_table(fill = TRUE)
     
+    ### Create table showing roster of players played
     #Only keep the first few columns and rename them
     benchRoster <- benchRoster[-1,]
     colnames(benchRoster) <- c("position", "player", "opponent", "status", "pts")
@@ -137,6 +168,7 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
     
     #combine playing roster and bench roster
     data <- rbind(playingRoster, benchRoster)
+    data$pts <- gsub(pattern = "--", replacement = NA, x = data$pts)
     data$pts <- as.numeric(data$pts)
     
    if ( sum(is.na(data$pts)) > 1 ){
@@ -208,8 +240,7 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
   }
 }
   
-  
-  
-  
-  
+### Find total points for each team per week
+
+scoreList[[1]]
   
