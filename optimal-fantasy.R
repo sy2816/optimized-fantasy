@@ -5,7 +5,6 @@ library(magrittr)
 library(stringr) 
 library(dplyr)
 library(getPass)
-library(stringr)
 
 #shell('docker pull selenium/standalone-chrome')
 
@@ -20,7 +19,7 @@ remDr <- rd[["client"]]
 #Nagivate to page to collect links to teams
 remDr$navigate(url = "http://games.espn.com/ffl/leaguesetup/ownerinfo?leagueId=309844")
 
-Sys.sleep(1.0)
+Sys.sleep(4.0)
 
 #Add info the username/password fields
 #The username/password inputs are on an iframe document, so I need to switch to the iframe before I search for elements
@@ -54,6 +53,8 @@ teamMapping <- data.frame(teamName = teamName, teamURL = teamURL, teamID = teamI
 teamMapping$teamName <- as.character(teamName)
 teamMapping$teamURL <- as.character(teamURL)
 teamMapping$teamID <- as.character(teamID)
+
+Sys.sleep(1.0)
 
 #Add results to list
 scoreList <- list()
@@ -168,7 +169,7 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
     
     #combine playing roster and bench roster
     data <- rbind(playingRoster, benchRoster)
-    data$pts <- gsub(pattern = "--", replacement = NA, x = data$pts)
+   # data$pts <- gsub(pattern = "--", replacement = NA, x = data$pts)
     data$pts <- as.numeric(data$pts)
     
    if ( sum(is.na(data$pts)) > 1 ){
@@ -242,5 +243,5 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
   
 ### Find total points for each team per week
 
-scoreList[[1]]
+#scoreList[[1]]
   
