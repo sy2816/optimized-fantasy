@@ -32,6 +32,7 @@ remDr$sendKeysToActiveElement(sendKeys = list("syork2816@gmail.com", key = "tab"
 
 Sys.sleep(1.0)
 
+rm(pass)
 
 source <- remDr$getPageSource()[[1]]
 
@@ -160,6 +161,8 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
     benchRoster <- benchRoster[which(benchRoster$position != "IR"),]
     
     #Add position
+    ###NOTE, THERE IS A BUG WHERE IT DOES NOT IDENTIFY
+    ###POSITION FOR INJURIED PLAYERS NEED TO BE FIXED.
     for(a in c(1:nrow(benchRoster))){
       player <- benchRoster$player[a]
       player <- gsub("[[:space:]]", "", player) # Remove white space  
