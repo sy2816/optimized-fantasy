@@ -82,6 +82,9 @@ scheduleLinks <- read_html(source) %>%
 scoreIndex <- grep(x = scheduleLinks, pattern = "boxscorequick")
 scheduleLinks <- scheduleLinks[scoreIndex]
 
+#Only take the first 11 so that we don't have to worry about playoff stuff
+scheduleLinks <- scheduleLinks[1:11]
+
 # Create final url
 scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
 
@@ -162,14 +165,41 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
     for(a in c(1:nrow(benchRoster))){
       player <- benchRoster$player[a]
       player <- gsub("[[:space:]]", "", player) # Remove white space  
+      player <- gsub(intToUtf8(160),'',benchRoster$player[a])
+      
+      #Remove Q, O, or D from last position
+      for(b in c(1:length(player))){
+        
+        lastChar <- substr(x = player[b], start = nchar(player[b]), stop = nchar(player[b]))
+        
+        if(lastChar %in% c("Q", "D", "O")){
+          player <- substr(x = player[b], start = 1, stop = (nchar(player[b])-1))
+        }
+        
+      }
+      
         pos <- substr(x = player, start = (nchar(player)-1), stop = nchar(player))
         benchRoster$position[a] <- pos
+    }
+    
+    #Lastly, fix D/ST
+    for (e in c(1:length(benchRoster$position))){
+      if(benchRoster$position[e] == "ST"){
+        benchRoster$position[e] <- "D/ST"
+      }
     }
     
     #combine playing roster and bench roster
     data <- rbind(playingRoster, benchRoster)
     data$pts <- gsub(pattern = "--", replacement = NA, x = data$pts)
     data$pts <- as.numeric(data$pts)
+    
+    #Convert NA points to 0
+    for(a in c(1:nrow(data))){
+      if(is.na(data$pts[a])){
+        data$pts[a] <- 0
+      }
+    }
     
    if ( sum(is.na(data$pts)) > 1 ){
      next
@@ -188,23 +218,42 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
       
       #QB
       QB <- bestPos(tempData, "QB")
+      if(nrow(QB) > 1){
+        QB <- QB[1,]
+      }
       tempData <- filter(tempData, player != QB$player)
     
       #RB1 
       RB1 <- bestPos(tempData, "RB")
+      if(nrow(RB1) > 1){
+        RB1 <- RB1[1,]
+      }
       tempData <- filter(tempData, player != RB1$player)
       
       #RB2
       RB2 <- bestPos(tempData, "RB")
+      if(nrow(RB2) > 1){
+        RB2 <- RB2[1,]
+      }
       tempData <- filter(tempData, player != RB2$player)
+      
+      
       
       #WR1
       WR1 <- bestPos(tempData, "WR")
+      if(nrow(WR1) > 1){
+        WR1 <- WR1[1,]
+      }
       tempData <- filter(tempData, player != WR1$player)
+      
       
       #WR2 
       WR2 <- bestPos(tempData, "WR")
+      if(nrow(WR2) > 1){
+        WR2 <- WR2[1,]
+      }
       tempData <- filter(tempData, player != WR2$player)
+
       
       #TE
       TE <-bestPos(tempData, "TE")
@@ -214,14 +263,24 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
       FLEX <- filter(tempData, position %in% c("WR", "TE", "RB"))
       FLEX <- na.omit(FLEX)
       FLEX <- FLEX[which(FLEX$pts == max(FLEX$pts)),]
+      #In the scenario where there is a tie at flex, take the first one.
+      if(nrow(FLEX) > 1){
+        FLEX <- FLEX[1,]
+      }
       tempData <- filter(tempData, player != FLEX$player)
       
       #DEF/ST
       DEF <- bestPos(tempData, "D/ST")
+      if(nrow(DEF) > 1){
+        DEF <- DEF[1,]
+      }
       tempData <- filter(tempData, player != DEF$player)
       
       #K
       K <- bestPos(tempData, "K")
+      if(nrow(K) > 1){
+        K <- K[1,]
+      }
       tempData <- filter(tempData, player != K$player)
       
       # Combine into optimized roster
