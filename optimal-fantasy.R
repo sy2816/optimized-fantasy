@@ -151,6 +151,26 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
     playingRoster <- playingRoster[-c(1:3),c(1:5)]
     colnames(playingRoster) <- c("position", "player", "opponent", "status", "pts")
     
+    #Fix position of FLEX player in the roster that was played
+    for (p in c(1:nrow(playingRoster))){
+      pos <- playingRoster$position[p]
+      if(pos == "FLEX"){
+        player <- playingRoster$player[p]
+        player <- gsub("[[:space:]]", "", player) # Remove white space  
+        
+        player <- gsub(pattern = "Q", replacement = "", x = player)
+        player <- gsub(pattern = "D", replacement = "", x = player)
+        player <- gsub(pattern = "O", replacement = "", x = player)
+        player <- gsub(pattern = "IR", replacement = "", x = player)
+        player <- gsub(pattern = "SSPD", replacement = "", x = player)
+        
+        correctedPos <- substr(x = player, start = nchar(player)-1, stop = nchar(player))
+        
+        playingRoster$position[p] <- correctedPos
+        
+      }
+    }
+    
     
     ### Create table showing roster of players played
     #Only keep the first few columns and rename them
@@ -161,7 +181,7 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
     # Remove IR designations
     benchRoster$player <-  sub(pattern = "IR", replacement = "", x = benchRoster$player)
     #And whatever player is in the IR spot since they can't play
-    benchRoster <- benchRoster[which(benchRoster$position != "IR"),]
+    #benchRoster <- benchRoster[which(benchRoster$position != "IR"),]
     
     #Add position
     ###NOTE, THERE IS A BUG WHERE IT DOES NOT IDENTIFY
@@ -205,9 +225,9 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
       }
     }
     
-   if ( sum(is.na(data$pts)) > 1 ){
-     next
-   }
+ #  if ( sum(is.na(data$pts)) > 1 ){
+#     next
+ #  }
     
     # Helper function to calculate which player to play.
     bestPos <- function(df = data, pos){
@@ -264,7 +284,7 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
       tempData <- filter(tempData, player != TE$player)
       
       #FLEX
-      FLEX <- filter(tempData, position %in% c("WR", "TE", "RB"))
+      FLEX <- filter(tempData, position %in% c("WR", "TE", "RB", "FLEX"))
       FLEX <- na.omit(FLEX)
       FLEX <- FLEX[which(FLEX$pts == max(FLEX$pts)),]
       #In the scenario where there is a tie at flex, take the first one.
@@ -288,7 +308,7 @@ scheduleLinks <- paste0("http://games.espn.com", scheduleLinks)
       tempData <- filter(tempData, player != K$player)
       
       # Combine into optimized roster
-      optimalData <- rbind(QB, RB1, RB2, WR1, WR2, FLEX, DEF, K)
+      optimalData <- rbind(QB, RB1, RB2, WR1, WR2, TE, FLEX, DEF, K)
       
       return(optimalData)
     }
